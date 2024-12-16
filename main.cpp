@@ -29,6 +29,62 @@ public:
 	virtual BankAccount *findAccount(std::string accountNumber) = 0;        
 };
 
+class SplitVectorStorage : public IAccountStorage
+{
+    std::vector<std::vector<BankAccount>> accounts = std::vector<std::vector<BankAccount>>(10);
+
+public:
+    void addAccount(BankAccount account)
+    {
+        if(account.getAccountNumber().length() < 7)
+        {
+            accounts[0].push_back(account);
+        }
+
+        else
+        {
+            int accountPrefix = account.getAccountNumber()[0] - '0';
+            accounts[accountPrefix].push_back(account);
+        }
+    }
+
+    BankAccount* findAccount(std::string accountNumber)
+    {
+        if(accountNumber.length() < 7)
+        {
+            for(BankAccount &account : accounts[0])
+            {
+                if(accountNumber == account.getAccountNumber()) return &account;
+            }
+        }
+
+        else if (isdigit(accountNumber[0]))
+        {
+            int accountPrefix = accountNumber[0] - '0';
+            for(BankAccount &account : accounts[accountPrefix])
+            {
+                if(accountNumber == account.getAccountNumber()) return &account;
+            }
+        }
+
+        return nullptr;
+    }
+};
+
+class MapStorage : public IAccountStorage{
+    std::map<std::string, BankAccount> accounts;
+
+public:
+    void addAccount(BankAccount bankAccount) override
+    {
+        accounts[bankAccount.getAccountNumber()] = bankAccount;
+    }
+    BankAccount* findAccount(std::string accountNumber) override
+    {
+        return &accounts[accountNumber];
+    }
+};
+
 class VectorAccountStorage: public IAccountStorage{
         std::vector<BankAccount> accounts;
 public:
@@ -37,20 +93,12 @@ public:
     }
 
     BankAccount *findAccount(std::string accountNumber){
-        BankAccount *ret = nullptr;
         for(BankAccount &account : accounts){
-            if(account.getAccountNumber() == accountNumber ){
-                ret = &account;                                        
-            }
+            if(account.getAccountNumber() == accountNumber ) return &account;                                        
         }
-        return ret;
+        return nullptr;
     }
-    
-
 };
-
-
-
 
 class Bank
 {
@@ -74,8 +122,10 @@ public:
 
 
 int main(int, char**){
+
     //VectorAccountStorage storage;
-    VectorAccountStorage storage;
+    SplitVectorStorage storage;
+
     //MapAccountStorage storage;
     Bank bank(&storage);
 
@@ -83,8 +133,8 @@ int main(int, char**){
 
 
     std::string sFirst = ""; 
-    std::string sLast = ""; 
-    std::string sNotFound = "notfound"; 
+    std::string sLast = "";
+    std::string sNotFound = "notfound";
 
     std::cout << "INITIALIZE: " << std::endl;
     auto startTime = std::chrono::high_resolution_clock::now();
